@@ -1,0 +1,427 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Tapitas de Esperanza Univalle</title>
+  <link rel="icon" href="./favicon.ico">
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+  <style>.glass{background:rgba(255,255,255,0.75);backdrop-filter:blur(10px);}</style>
+</head>
+<body class="min-h-screen bg-gradient-to-b from-rose-50 via-sky-50 to-white text-slate-900">
+  <!-- HERO -->
+  <header class="relative overflow-hidden">
+    <div class="absolute -top-24 -right-24 h-72 w-72 bg-gradient-to-br from-rose-400 to-red-500 rounded-full blur-3xl opacity-20"></div>
+    <div class="absolute -bottom-24 -left-24 h-72 w-72 bg-gradient-to-br from-sky-400 to-indigo-500 rounded-full blur-3xl opacity-20"></div>
+    <div class="max-w-6xl mx-auto px-4 py-8 md:py-10 flex items-center justify-between">
+      <div class="flex items-center gap-4">
+        <img src="./assets/logo-primario.png" class="h-12 w-12 rounded-2xl shadow" alt="Logo">
+        <img src="./assets/logo-secundario.png" class="h-12 w-12 rounded-2xl shadow" alt="Logo 2">
+        <div>
+          <h1 class="text-2xl md:text-3xl font-extrabold tracking-tight">Tapitas de Esperanza Univalle</h1>
+          <p class="text-sm text-slate-600">Tiempo real • La Paz, Bolivia</p>
+        </div>
+      </div>
+      <div class="flex items-center gap-2">
+        <button id="btnExport" class="hidden rounded-xl px-3 py-2 text-sm border hover:bg-white/60">Exportar CSV</button>
+        <button id="btnAdmin" class="rounded-xl px-3 py-2 text-sm border hover:bg-white/60">Administrar</button>
+        <button id="btnLogout" class="hidden rounded-xl px-3 py-2 text-sm border hover:bg-white/60">Cerrar sesión</button>
+      </div>
+    </div>
+  </header>
+
+  <main class="max-w-6xl mx-auto px-4 pb-12">
+    <!-- KPIs -->
+    <section class="grid sm:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6 -mt-4">
+      <div class="glass rounded-2xl p-6 border shadow-sm">
+        <div class="text-sm text-slate-500">Peso total</div>
+        <div id="totalGeneral" class="mt-1 text-5xl font-black tabular-nums">—</div>
+        <div class="text-xs text-slate-500 mt-2">En kilogramos (kg)</div>
+      </div>
+      <div class="glass rounded-2xl p-6 border shadow-sm">
+        <div class="text-sm text-slate-500">Última actualización</div>
+        <div id="ultimaAct" class="mt-1 text-lg font-semibold">—</div>
+      </div>
+      <div class="glass rounded-2xl p-6 border shadow-sm">
+        <div class="text-sm text-slate-500 mb-2">Pantalla completa</div>
+        <button id="btnFullscreen" class="rounded-xl px-3 py-2 text-sm border hover:bg-white/60">Abrir/Salir</button>
+      </div>
+    </section>
+
+    <!-- Gráficos -->
+    <section class="grid lg:grid-cols-3 gap-4 md:gap-6 mt-6">
+      <div class="glass rounded-2xl p-4 md:p-6 border shadow-sm lg:col-span-2">
+        <div class="flex items-center justify-between mb-2">
+          <h3 class="font-semibold">Peso por paralelo (kg)</h3>
+          <div class="text-xs text-slate-500">A–D</div>
+        </div>
+        <canvas id="barChart" height="140"></canvas>
+      </div>
+      <div class="glass rounded-2xl p-4 md:p-6 border shadow-sm">
+        <div class="flex items-center justify-between mb-2">
+          <h3 class="font-semibold">Distribución</h3>
+          <div class="text-xs text-slate-500">Participación %</div>
+        </div>
+        <canvas id="doughnutChart" height="140"></canvas>
+      </div>
+    
+    <!-- Ranking -->
+    <section class="glass rounded-2xl p-4 md:p-6 border shadow-sm mt-6">
+      <div class="flex items-center justify-between mb-2">
+        <h3 class="font-semibold">Ranking de paralelos (por kg)</h3>
+        <span class="text-xs text-slate-500">Top 2 con medalla</span>
+      </div>
+      <ol id="rankingList" class="divide-y divide-slate-200">
+        <!-- filas de ranking dinámicas -->
+      </ol>
+    </section>
+</section>
+
+    <!-- Tarjetas por paralelo -->
+    <section class="grid sm:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6 mt-6" id="cardsParalelos"></section>
+
+    <!-- Panel admin -->
+    <section id="panelAdmin" class="hidden mt-8">
+      <div class="glass rounded-2xl p-6 border shadow-sm">
+        <div class="flex items-center justify-between mb-4">
+          <h2 class="text-lg font-semibold">Panel de administración</h2>
+          <div class="text-xs text-slate-500">Solo usuarios autenticados</div>
+        </div>
+
+        <div class="grid md:grid-cols-2 gap-6">
+          <div class="space-y-4">
+            <div class="border rounded-xl p-4 bg-white/70">
+              <h3 class="font-semibold mb-2">Editar peso por paralelo (kg)</h3>
+              <div id="adminParalelos" class="space-y-3"></div>
+              <p class="text-xs text-slate-500 mt-2">Nota: en base de datos se guarda en gramos para mayor precisión.</p>
+            </div>
+            <div class="border rounded-xl p-4 bg-white/70">
+              <h3 class="font-semibold mb-2">Acciones rápidas</h3>
+              <div class="flex flex-wrap gap-2">
+                <button id="btnResetAll" class="rounded-xl px-3 py-2 text-sm border hover:bg-red-50">Reiniciar todos a 0 kg</button>
+                
+              </div>
+            </div>
+          </div>
+          <div class="border rounded-xl p-4 bg-white/70">
+            <h3 class="font-semibold mb-2">Historial (auditoría)</h3>
+            <div class="max-h-72 overflow-auto border rounded-lg" id="auditBox">
+              <table class="w-full text-sm">
+                <thead class="bg-slate-50 sticky top-0">
+                  <tr>
+                    <th class="text-left px-3 py-2 border-b">Fecha</th>
+                    <th class="text-left px-3 py-2 border-b">Usuario</th>
+                    <th class="text-left px-3 py-2 border-b">Acción</th>
+                    <th class="text-left px-3 py-2 border-b">Detalles</th>
+                  </tr>
+                </thead>
+                <tbody id="auditBody"></tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <!-- Modal login -->
+  <div id="loginModal" class="hidden fixed inset-0 z-20 bg-black/30 flex items-center justify-center p-4">
+    <div class="bg-white w-full max-w-sm rounded-2xl p-6 shadow-xl border">
+      <h3 class="text-lg font-semibold mb-1">Acceso de administrador</h3>
+      <p class="text-sm text-slate-600 mb-4">Ingresa con tu correo y contraseña.</p>
+      <label class="text-sm block mb-1">Correo</label>
+      <input id="email" type="email" class="w-full border rounded-lg px-3 py-2 mb-3" placeholder="admin@univalle.edu">
+      <label class="text-sm block mb-1">Contraseña</label>
+      <input id="password" type="password" class="w-full border rounded-lg px-3 py-2 mb-4" placeholder="********">
+      <div class="flex items-center justify-between">
+        <button id="btnLogin" class="rounded-xl px-3 py-2 text-sm border hover:bg-slate-100">Entrar</button>
+        <button id="btnCloseLogin" class="rounded-xl px-3 py-2 text-sm border hover:bg-slate-100">Cancelar</button>
+      </div>
+      <p id="loginMsg" class="text-xs text-rose-600 mt-3"></p>
+    </div>
+  </div>
+
+  <footer class="max-w-6xl mx-auto px-4 py-10 text-center text-sm text-slate-600">
+    <span class="font-semibold">Hecho para Univalle</span> · ¡Cada tapita suma, sigamos reciclando! ♻️
+  </footer>
+
+<script type="module">
+  import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+  const SUPABASE_URL = "https://iwloafeuffwycfpmsowu.supabase.co";
+  const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Iml3bG9hZmV1ZmZ3eWNmcG1zb3d1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTc3NDE1OTgsImV4cCI6MjA3MzMxNzU5OH0.7phMnd1mc7b5sODx_Tquoq8QtCqDuAtPJH5Gu5HEa_Y";
+  const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+  // Helpers: conversion gramos <-> kg (guardamos en DB como gramos: integer)
+  const gToKg = g => (g / 1000);
+  const kgToG = kg => Math.round(kg * 1000);
+
+  // DOM
+  const totalGeneral = document.getElementById('totalGeneral');
+  const ultimaAct = document.getElementById('ultimaAct');
+  const cardsParalelos = document.getElementById('cardsParalelos');
+  const panelAdmin = document.getElementById('panelAdmin');
+  const adminParalelos = document.getElementById('adminParalelos');
+  const auditBody = document.getElementById('auditBody');
+  const btnAdmin = document.getElementById('btnAdmin');
+  const btnLogout = document.getElementById('btnLogout');
+  const btnExport = document.getElementById('btnExport');
+  const btnResetAll = document.getElementById('btnResetAll');
+  const btnSeed = document.getElementById('btnSeed');
+  const loginModal = document.getElementById('loginModal');
+  const btnLogin = document.getElementById('btnLogin');
+  const btnCloseLogin = document.getElementById('btnCloseLogin');
+  const loginMsg = document.getElementById('loginMsg');
+  const email = document.getElementById('email');
+  const password = document.getElementById('password');
+  const btnFullscreen = document.getElementById('btnFullscreen');
+
+  let cachedParalelos = [];
+  let barChart, doughnutChart;
+
+  function fmtDate(d) { return new Date(d).toLocaleString('es-BO', { timeZone: 'America/La_Paz' }); }
+  function fmtKg(n) { return (Math.round(n * 10) / 10).toFixed(1) + " kg"; }
+  function toast(msg) { alert(msg); }
+
+  btnFullscreen?.addEventListener('click', () => {
+    if (!document.fullscreenElement) document.documentElement.requestFullscreen();
+    else document.exitFullscreen();
+  });
+
+  // Charts
+  function updateCharts(paralelos) {
+    const labels = paralelos.map(p => p.name);
+    const dataKg = paralelos.map(p => gToKg(p.count));
+    const barCtx = document.getElementById('barChart').getContext('2d');
+    const doughnutCtx = document.getElementById('doughnutChart').getContext('2d');
+    if (!barChart) {
+      barChart = new Chart(barCtx, {
+        type: 'bar',
+        data: { labels, datasets: [{ label: 'Peso (kg)', data: dataKg }] },
+        options: { responsive: true, scales: { y: { beginAtZero: true } }, plugins: { legend: { display: false } } }
+      });
+    } else {
+      barChart.data.labels = labels;
+      barChart.data.datasets[0].data = dataKg;
+      barChart.update();
+    }
+    if (!doughnutChart) {
+      doughnutChart = new Chart(doughnutCtx, {
+        type: 'doughnut',
+        data: { labels, datasets: [{ data: dataKg }] },
+        options: { responsive: true, plugins: { legend: { position: 'bottom' } }, cutout: '65%' }
+      });
+    } else {
+      doughnutChart.data.labels = labels;
+      doughnutChart.data.datasets[0].data = dataKg;
+      doughnutChart.update();
+    }
+  }
+
+  // Render público
+  function renderPublic(paralelos) {
+    renderRanking(paralelos);
+    cardsParalelos.innerHTML = "";
+    let totalG = 0;
+    let latest = null;
+    paralelos.forEach(p => {
+      totalG += p.count;
+      if (p.updated_at && (!latest || new Date(p.updated_at) > new Date(latest))) latest = p.updated_at;
+      const card = document.createElement('div');
+      card.className = "rounded-2xl p-5 border shadow-sm bg-white/80 hover:shadow-md transition";
+      card.innerHTML = `
+        <div class="flex items-center justify-between">
+          <h3 class="text-lg font-semibold">Paralelo ${p.name}</h3>
+          <span class="text-xs text-slate-500">ID ${p.id}</span>
+        </div>
+        <div class="text-4xl font-black mt-2 tabular-nums">${fmtKg(gToKg(p.count))}</div>
+        <p class="text-xs text-slate-500 mt-1">Último cambio: ${p.updated_at ? fmtDate(p.updated_at) : '—'}</p>
+      `;
+      cardsParalelos.appendChild(card);
+    });
+    totalGeneral.textContent = fmtKg(gToKg(totalG));
+    ultimaAct.textContent = latest ? fmtDate(latest) : '—';
+    updateCharts(paralelos);
+  }
+
+  // Render admin
+  function renderAdmin(paralelos) {
+    adminParalelos.innerHTML = "";
+    paralelos.forEach(p => {
+      const row = document.createElement('div');
+      row.className = "grid grid-cols-12 gap-2 items-center";
+      row.innerHTML = `
+        <div class="col-span-3 font-semibold">Paralelo ${p.name}</div>
+        <input data-id="${p.id}" data-field="countkg" type="number" step="0.1" class="col-span-5 border rounded-lg px-3 py-2" value="${(gToKg(p.count)).toFixed(1)}" min="0">
+        <div class="col-span-4 flex gap-2">
+          <button data-act="add" data-id="${p.id}" class="border rounded-lg px-3 py-2 text-sm">+0.1 kg</button>
+          <button data-act="sub" data-id="${p.id}" class="border rounded-lg px-3 py-2 text-sm">-0.1 kg</button>
+          <button data-act="save" data-id="${p.id}" class="border rounded-lg px-3 py-2 text-sm">Guardar</button>
+        </div>
+      `;
+      adminParalelos.appendChild(row);
+    });
+  }
+
+
+  // Ranking
+  function renderRanking(paralelos) {
+    const list = document.getElementById('rankingList');
+    if (!list) return;
+    const sorted = [...paralelos].sort((a,b) => b.count - a.count);
+    list.innerHTML = '';
+    sorted.forEach((p, idx) => {
+      const li = document.createElement('li');
+      li.className = "py-2";
+      const pos = idx + 1;
+      const medal = pos === 1 ? "🥇" : pos === 2 ? "🥈" : "";
+      const weightKg = (Math.round((p.count/1000)*10)/10).toFixed(1);
+      li.innerHTML = `
+        <div class="flex items-center justify-between">
+          <div class="flex items-center gap-3">
+            <div class="w-8 text-center text-lg">${pos}</div>
+            <div class="font-semibold">Paralelo ${p.name}</div>
+            ${medal ? `<span class="text-2xl" title="Medalla">${medal}</span>` : ''}
+          </div>
+          <div class="tabular-nums font-bold">${weightKg} kg</div>
+        </div>
+      `;
+      list.appendChild(li);
+    });
+  }
+
+  // Carga inicial
+  async function loadParalelos() {
+    const { data, error } = await supabase.from('parallels').select('*').order('name', { ascending: true });
+    if (error) { console.error(error); return; }
+    cachedParalelos = data || [];
+    renderPublic(cachedParalelos);
+    const session = await supabase.auth.getSession();
+    if (session.data.session) renderAdmin(cachedParalelos);
+  }
+
+  // Admin handlers
+  adminParalelos?.addEventListener('click', async (e) => {
+    const t = e.target;
+    const id = Number(t.getAttribute('data-id'));
+    const act = t.getAttribute('data-act');
+    if (!id || !act) return;
+    const p = cachedParalelos.find(x => Number(x.id) === id);
+    if (!p) return;
+    const currentKg = gToKg(p.count);
+    if (act === 'add') {
+      await updateCount(id, currentKg + 0.1, 'incremento', { fromKg: currentKg, toKg: currentKg + 0.1 });
+    } else if (act === 'sub') {
+      const nxt = Math.max(0, currentKg - 0.1);
+      await updateCount(id, nxt, 'decremento', { fromKg: currentKg, toKg: nxt });
+    } else if (act === 'save') {
+      const inp = adminParalelos.querySelector(`input[data-id="${id}"][data-field="countkg"]`);
+      const val = Math.max(0, parseFloat(inp?.value || '0'));
+      await updateCount(id, val, 'set', { fromKg: currentKg, toKg: val });
+    }
+  });
+
+  async function updateCount(id, newValKg, action, details) {
+    const newValG = kgToG(newValKg);
+    const { error } = await supabase.from('parallels').update({ count: newValG }).eq('id', id).select().single();
+    if (error) { toast('Error al actualizar (revisa políticas RLS).'); console.error(error); return; }
+    const _ = await supabase.from('audit_logs').insert({ action, details, parallel_id: id });
+    await loadParalelos();
+  }
+
+  btnResetAll?.addEventListener('click', async () => {
+    if (!confirm('Seguro que deseas reiniciar todos a 0 kg?')) return;
+    const updates = cachedParalelos.map(p => ({ id: p.id, count: 0 })); // 0 gramos
+    const { error } = await supabase.from('parallels').upsert(updates);
+    if (error) { toast('Error al reiniciar'); console.error(error); return; }
+    const _ = await supabase.from('audit_logs').insert({ action: 'reset_all', details: {} });
+    await loadParalelos();
+  });
+
+  btnSeed?.addEventListener('click', async () => {
+    const seedKg = [
+      { name: 'A', kg: 1.5 },
+      { name: 'B', kg: 0.8 },
+      { name: 'C', kg: 2.1 },
+      { name: 'D', kg: 0.3 }
+    ];
+    for (const s of seedKg) {
+      await supabase.from('parallels').update({ count: kgToG(s.kg) }).eq('name', s.name);
+    }
+    const _ = await supabase.from('audit_logs').insert({ action: 'seed_demo', details: { seedKg } });
+    await loadParalelos();
+  });
+
+  // Export CSV (incluye kg y gramos)
+  btnExport?.addEventListener('click', async () => {
+    const { data, error } = await supabase.from('parallels').select('*').order('name', { ascending: true });
+    if (error) { toast('No se pudo exportar'); return; }
+    const rows = [['id','name','kg','grams','updated_at'], ...(data || []).map(r => [r.id, r.name, (gToKg(r.count)).toFixed(1), r.count, r.updated_at || ''])];
+    const csv = rows.map(r => r.map(x => `"${String(x).replace(/"/g,'""')}"`).join(',')).join('\n');
+    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url; a.download = 'tapitas_peso.csv'; a.click();
+    URL.revokeObjectURL(url);
+  });
+
+  // Auth
+  btnAdmin?.addEventListener('click', async () => {
+    const session = await supabase.auth.getSession();
+    if (session.data.session) {
+      panelAdmin.classList.remove('hidden');
+      btnLogout.classList.remove('hidden');
+      btnExport.classList.remove('hidden');
+    } else {
+      loginModal.classList.remove('hidden');
+    }
+  });
+  btnLogout?.addEventListener('click', async () => {
+    await supabase.auth.signOut();
+    panelAdmin.classList.add('hidden');
+    btnLogout.classList.add('hidden');
+    btnExport.classList.add('hidden');
+    alert('Sesión cerrada');
+  });
+  btnCloseLogin?.addEventListener('click', () => loginModal.classList.add('hidden'));
+  btnLogin?.addEventListener('click', async () => {
+    loginMsg.textContent = '';
+    const { error } = await supabase.auth.signInWithPassword({ email: email.value, password: password.value });
+    if (error) { loginMsg.textContent = 'Credenciales inválidas'; return; }
+    loginModal.classList.add('hidden');
+    panelAdmin.classList.remove('hidden');
+    btnLogout.classList.remove('hidden');
+    btnExport.classList.remove('hidden');
+    await loadParalelos();
+    alert('Bienvenido');
+  });
+
+  // Realtime (opcional, si lo tienes habilitado)
+  const ch = supabase.channel('realtime:parallels')
+    .on('postgres_changes', { event: '*', schema: 'public', table: 'parallels' }, () => loadParalelos())
+    .subscribe();
+
+  // Init
+  (async function(){ await loadParalelos(); await loadAudit(); })();
+
+  async function loadAudit() {
+    const { data, error } = await supabase.from('audit_logs')
+      .select('created_at, action, details, user_email')
+      .order('created_at', { ascending: false })
+      .limit(100);
+    if (error) { console.error(error); return; }
+    auditBody.innerHTML = '';
+    (data || []).forEach(row => {
+      const tr = document.createElement('tr');
+      tr.innerHTML = `
+        <td class="px-3 py-2 border-b whitespace-nowrap">${new Date(row.created_at).toLocaleString('es-BO', { timeZone: 'America/La_Paz' })}</td>
+        <td class="px-3 py-2 border-b">${row.user_email || '—'}</td>
+        <td class="px-3 py-2 border-b">${row.action}</td>
+        <td class="px-3 py-2 border-b text-xs">${row.details ? JSON.stringify(row.details) : ''}</td>
+      `;
+      auditBody.appendChild(tr);
+    });
+  }
+</script>
+</body>
+</html>
